@@ -1,5 +1,6 @@
 <script setup lang="js">
-import {getFiles, uploadFile} from "@/api/file"
+// import {getFiles, uploadFile} from "@/api/file"
+import {getNotes} from "@/api/note";
 import {customRef, onMounted, ref} from "vue";
 import {Message} from "@arco-design/web-vue";
 import {getToken} from '@/utils/auth'
@@ -23,12 +24,6 @@ const setClipboard = async function (text) {
 }
 
 const copyLink = async function (fullPath) {
-  // let path = currentPath.value
-  // if(!path.endsWith("/")){
-  //   path = `${path}/`
-  // }
-  // path = `${path}${name}`
-  // let fullText = `${host}/static${path}`
   let fullText = `${host}/${fullPath}`
   await setClipboard(fullText)
 }
@@ -36,7 +31,7 @@ const copyLink = async function (fullPath) {
 
 const updateFileListByRequestBackend = async function (path) {
   try {
-    let fileResponse = await getFiles(path)
+    let fileResponse = await getNotes(path)
     dirs.value = fileResponse.dirs
     currentPath.value = fileResponse.root
     return true
