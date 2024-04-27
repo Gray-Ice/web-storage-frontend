@@ -1,15 +1,18 @@
 <script setup lang="js">
 // import {getFiles, uploadFile} from "@/api/file"
-import {getNotes} from "@/api/note";
+import {getNotes, checkNoteExists, deleteFile} from "@/api/note";
 import {customRef, onMounted, ref} from "vue";
 import {Message} from "@arco-design/web-vue";
 import {getToken} from '@/utils/auth'
+import Editor from "./components/editor.vue"
 
 const showUploadFilesWithDrag = ref(false)
 const currentPath = ref("")
 const dirs = ref([])
 const host = import.meta.env.VITE_API_BASE_URL
 const token = ref("")
+const drawerHeight = ref(250)
+const editingInfo = ref({filename: "", text: "", date: "", visible: false})
 token.value = getToken()
 
 
@@ -29,14 +32,14 @@ const copyLink = async function (fullPath) {
 }
 
 
-const updateFileListByRequestBackend = async function (path) {
+const updateNotesByRequestBackend = async function (path) {
   try {
     let fileResponse = await getNotes(path)
     dirs.value = fileResponse.dirs
     currentPath.value = fileResponse.root
     return true
   } catch (e) {
-    console.log(`Request files from backend failed: ${e}`)
+    console.log(`Request notes from backend failed: ${e}`)
     return false
   }
 }
@@ -57,7 +60,7 @@ const setPath = async function (path) {
   if (path[path.length - 1] !== "/") {
     path = `${path}/`
   }
-  let success = await updateFileListByRequestBackend(path)
+  let success = await updateNotesByRequestBackend(path)
   if (!success) {
     return false
   }
@@ -88,10 +91,58 @@ const gotoLastFolder = async function () {
   await setPath(tempPath)
 }
 
+async function editExistingNote(filename) {
+  if (filename.length <= 3 || !filename.endsWith(".md")) {
+    Message.error({content: `Can't edit ${filename}, edit is only support to edit .md file`, duration: 5000})
+    return
+  }
+  let path = currentPath.value
+  let pathSlices = path.split("/")
+  let date = `${pathSlices[1]}-${pathSlices[2]}-${pathSlices[3]}`
+  let resp = undefined;
+  try {
+    resp = await checkNoteExists(date, filename, true)
+  } catch (e) {
+    Message.error({content: `When fetching file, got error: ${e}`, duration: 5000})
+    return
+  }
+
+  let filenameToEditor = ""
+  for (let i = 0; i < filename.length - 3; i++) {
+    filenameToEditor += filename[i]
+  }
+  editingInfo.value.filename = filenameToEditor
+  editingInfo.value.text = resp.text
+  editingInfo.value.date = date
+  editingInfo.value.visible = true
+}
+
+function onStopEdit() {
+  editingInfo.value.text = ""
+  editingInfo.value.filename = ""
+  editingInfo.value.visible = false
+}
+
+async function deleteFileUnderPath(filename){
+  let path;
+  if(currentPath.value === "/"){
+    path = `${currentPath.value}${filename}`
+  } else {
+    path = `${currentPath.value}/${filename}`
+  }
+  let resp = null;
+  try{
+    resp = await deleteFile(path)
+  } catch (e){
+    return
+  }
+  await setPath(currentPath.value)
+  Message.success({content: `${resp.msg}`})
+}
+
 onMounted(async () => {
   setPath("")
-  console.log(dirs)
-  setClipboard("Something just like this")
+  drawerHeight.value = window.screen.height * 0.7
 })
 const example = ref([1, 2, 3])
 </script>
@@ -101,6 +152,18 @@ const example = ref([1, 2, 3])
     <!--    <a-layout-sider>-->
     <!--      something-->
     <!--    </a-layout-sider>-->
+    <a-drawer
+        :visible="editingInfo.visible"
+        placement="top"
+        :esc-to-close="false"
+        :height="drawerHeight"
+        @cancel="onStopEdit"
+        @ok="onStopEdit"
+        ok-text="Close"
+        :hide-cancel="true"
+    >
+      <Editor :filename="editingInfo.filename" :date="editingInfo.date" :text="editingInfo.text"/>
+    </a-drawer>
     <a-modal v-model:visible="showUploadFilesWithDrag" @ok="e => showUploadFilesWithDrag = false"
              @cancel="e => showUploadFilesWithDrag = false">
       <template #title>
@@ -108,7 +171,7 @@ const example = ref([1, 2, 3])
       </template>
       <div>
         <a-upload draggable multiple
-                  :action="host + '/files/upload_file'"
+                  :action="host + '/notes/upload_file'"
                   :headers="{authorization: 'Something' + ' ' + token}"
                   :data="{'path': currentPath}"
         >
@@ -135,7 +198,7 @@ const example = ref([1, 2, 3])
                 <a-button type="primary" status="normal" @click="gotoLastFolder">Back to last folder</a-button>
                 <!--                <a-button type="primary" status="success">Upload File</a-button>-->
                 <a-upload
-                    :action="host + '/files/upload_file'"
+                    :action="host + '/notes/upload_file'"
                     :headers="{authorization: 'Something' + ' ' + token}"
                     :data="{'path': currentPath}"
                     @success="()=>setPath(currentPath)"
@@ -152,16 +215,21 @@ const example = ref([1, 2, 3])
           </a-list-item-meta>
           <template #actions>
             <a-space>
-              <a-button type="primary" status="danger">
-                <template #icon>
-                  <icon-delete/>
-                </template>
-              </a-button>
+              <a-popconfirm :content="`Do you really want to delete ${file.name}`" ok-text="Delete" cancel-text="No" position="left" @ok="deleteFileUnderPath(file.name)">
+                  <a-button type="primary" status="danger">
+                  <template #icon>
+                    <icon-delete/>
+                  </template>
+                </a-button>
+              </a-popconfirm>
               <a-button type="primary" status="normal" v-if="file.dir" @click="addPath(file.name)">
                 <icon-folder/>
               </a-button>
               <a-button type="primary" status="normal" v-else @click="copyLink(file.path)">
                 <icon-attachment/>
+              </a-button>
+              <a-button type="primary" status="normal" v-else @click="editExistingNote(file.name)">
+                <icon-edit/>
               </a-button>
 
             </a-space>

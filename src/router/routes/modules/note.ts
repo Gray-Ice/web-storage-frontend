@@ -1,9 +1,9 @@
 import { DEFAULT_LAYOUT } from '../base';
 import { AppRouteRecordRaw } from '../types';
 
-const File: AppRouteRecordRaw = {
-    path: '/notes',
-    name: 'Notes',
+const Note: AppRouteRecordRaw = {
+    path: '/note',
+    name: 'Note',
     component: DEFAULT_LAYOUT,
     // component: ()=> {return import ('@/views/file/index.vue')},
     meta: {
@@ -15,7 +15,7 @@ const File: AppRouteRecordRaw = {
         {
             path: 'markdown',
             name: 'markdown',
-            component: () => import('@/views/notes/index.vue'),
+            component: () => import('@/views/note/index.vue'),
             meta: {
                 locale: 'menu.note.write',
                 requiresAuth: true,
@@ -26,7 +26,7 @@ const File: AppRouteRecordRaw = {
         {
             path: 'notes',
             name: 'notes',
-            component: () => import('@/views/notes/notes.vue'),
+            component: () => import('@/views/note/notes.vue'),
             meta: {
                 locale: 'menu.note.files',
                 requiresAuth: true,
@@ -37,4 +37,4 @@ const File: AppRouteRecordRaw = {
     ],
 };
 
-export default File;
+export default Note;

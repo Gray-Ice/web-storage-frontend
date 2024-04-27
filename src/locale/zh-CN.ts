@@ -4,6 +4,7 @@ import localeLogin from '@/views/login/locale/zh-CN';
 import localeWorkplace from '@/views/dashboard/workplace/locale/zh-CN';
 
 import localeSettings from './zh-CN/settings';
+import localeNotes from "@/views/note/locale/zh-CN"
 
 export default {
   'menu.dashboard': '仪表盘',
@@ -27,4 +28,5 @@ export default {
   ...localeMessageBox,
   ...localeLogin,
   ...localeWorkplace,
+  ...localeNotes,
 };

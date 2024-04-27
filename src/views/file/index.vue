@@ -96,7 +96,6 @@ const gotoLastFolder = async function () {
 onMounted(async () => {
   setPath("")
   console.log(dirs)
-  setClipboard("Something just like this")
 })
 const example = ref([1, 2, 3])
 </script>
