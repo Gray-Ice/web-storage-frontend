@@ -49,6 +49,7 @@ export default defineConfig({
     },
   },
   server: {
-      port: 9007
+      port: 9007,
+    host: "0.0.0.0",
     }
 });

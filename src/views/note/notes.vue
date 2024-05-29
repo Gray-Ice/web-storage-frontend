@@ -1,7 +1,7 @@
 <script setup lang="js">
 // import {getFiles, uploadFile} from "@/api/file"
 import {getNotes, checkNoteExists, deleteFile} from "@/api/note";
-import {customRef, onMounted, ref} from "vue";
+import {customRef, onMounted, ref, watch} from "vue";
 import {Message} from "@arco-design/web-vue";
 import {getToken} from '@/utils/auth'
 import Editor from "./components/editor.vue"
@@ -13,6 +13,7 @@ const host = import.meta.env.VITE_API_BASE_URL
 const token = ref("")
 const drawerHeight = ref(250)
 const editingInfo = ref({filename: "", text: "", date: "", visible: false})
+const responsive = ref({height: 0, width: 0, buttonLayout: "horizontal", })
 token.value = getToken()
 
 
@@ -143,8 +144,11 @@ async function deleteFileUnderPath(filename){
 onMounted(async () => {
   setPath("")
   drawerHeight.value = window.screen.height * 0.7
+  console.log(window.innerWidth)
+  if(window.innerWidth <= 480){
+    responsive.value.buttonLayout = "vertical"
+  }
 })
-const example = ref([1, 2, 3])
 </script>
 
 <template>
@@ -188,13 +192,13 @@ const example = ref([1, 2, 3])
       <!--      </div>-->
       <a-list>
         <template #header>
-          <div style="position: relative; left: 0; top: 0; padding: 2rem">
-            <div style="position: absolute; left: 0; top: 0">
+          <div class="list-header-container">
+            <div class="list-header-current-path">
               Current Path: {{ currentPath }}
               <a-button @click="setPath(currentPath)" type="primary">Refresh</a-button>
             </div>
-            <div style="position: absolute; right: 0; top: 0">
-              <a-space>
+            <div class="list-header-buttons">
+              <a-space :direction="responsive.buttonLayout">
                 <a-button type="primary" status="normal" @click="gotoLastFolder">Back to last folder</a-button>
                 <!--                <a-button type="primary" status="success">Upload File</a-button>-->
                 <a-upload
@@ -243,6 +247,27 @@ const example = ref([1, 2, 3])
 </template>
 
 <style scoped lang="less">
+@media only screen and (min-width: 320px) and (max-width: 480px){
+  .list-header-container{
+  }
+  .list-header-current-path{
+    padding: 10px;
+  }
+  .list-header-buttons{
+  }
+}
+
+@media only screen and (min-width: 481px){
+  .list-header-container {
+    position: relative; left: 0; top: 0; padding: 2rem
+  }
+  .list-header-current-path {
+    position: absolute; left: 0; top: 0
+  }
+  .list-header-buttons{
+    position: absolute; right: 0; top: 0
+  }
+}
 .layout-demo {
   //height: 500px;
   background: var(--color-fill-2);
